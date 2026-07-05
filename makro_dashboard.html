@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta http-equiv="refresh" content="300">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Makro-Dashboard</title>
+<style>
+ body{font-family:Segoe UI,Arial,sans-serif;background:#0f1420;color:#e8ecf4;margin:0;padding:20px}
+ h1{font-size:22px} h2{font-size:16px;margin-top:24px}
+ .sub{color:#8b95a8;font-size:13px;margin-bottom:16px}
+ .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+ .tile{background:#161d2e;border:1px solid #26314a;border-radius:12px;padding:14px}
+ .tl{color:#8b95a8;font-size:12px} .tv{font-size:22px;font-weight:700;margin:4px 0}
+ .ts{font-size:13px} .up{color:#3ddc84} .down{color:#ff5d5d}
+ table{width:100%;border-collapse:collapse;font-size:13px;background:#161d2e;border-radius:12px;overflow:hidden}
+ th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #26314a}
+ th{color:#8b95a8;font-weight:600;font-size:12px}
+ tr.today td{background:#1c2536}
+ .imp-h{background:#3a1420;color:#ff5d5d;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
+ .imp-m{background:#33290f;color:#f4c542;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
+ .disclaimer{color:#8b95a8;font-size:11px;margin-top:20px}
+</style></head><body>
+<h1>🌍 Makro-Dashboard</h1>
+<div class="sub">Stand: 05.07.2026 18:32 · Auto-Refresh alle 5 Min · Zeiten in deiner lokalen Zeitzone.</div>
+<div class="grid"><div class="tile"><div class="tl">🪙 Crypto Fear & Greed</div>
+        <div class="tv" style="color:#ff5d5d">23</div>
+        <div class="ts" style="color:#ff5d5d">Extreme Fear</div></div><div class="tile"><div class="tl">VIX – Angst-Index Aktien</div>
+        <div class="tv">16.15</div>
+        <div class="ts down">-2.65%</div></div><div class="tile"><div class="tl">US-Rendite 10 Jahre (%)</div>
+        <div class="tv">4.49</div>
+        <div class="ts up">+0.22%</div></div><div class="tile"><div class="tl">EUR/USD</div>
+        <div class="tv">1.144</div>
+        <div class="ts up">+0.55%</div></div><div class="tile"><div class="tl">Gold (USD/oz)</div>
+        <div class="tv">4,187.3</div>
+        <div class="ts up">+1.81%</div></div><div class="tile"><div class="tl">Öl WTI (USD)</div>
+        <div class="tv">68.78</div>
+        <div class="ts up">+0.13%</div></div><div class="tile"><div class="tl">S&P 500</div>
+        <div class="tv">7,483.0</div>
+        <div class="ts up">+0.0%</div></div><div class="tile"><div class="tl">DAX</div>
+        <div class="tv">25,779.0</div>
+        <div class="ts up">+0.78%</div></div><div class="tile"><div class="tl">Bitcoin (USD)</div>
+        <div class="tv">62,568.0</div>
+        <div class="ts down">-0.82%</div></div></div>
+<h2>📅 Wirtschaftskalender diese Woche (USD/EUR, wichtig & mittel)</h2>
+<table><tr><th>Zeit</th><th>Land</th><th>Impact</th><th>Termin</th><th>Prognose</th><th>Zuvor</th></tr><tr><td>Mon 06.07. 16:00</td>
+        <td>USD</td><td><span class="imp-h">HIGH</span></td><td>ISM Services PMI</td>
+        <td>54.2</td><td>54.5</td></tr><tr><td>Wed 08.07. 20:00</td>
+        <td>USD</td><td><span class="imp-h">HIGH</span></td><td>FOMC Meeting Minutes</td>
+        <td>–</td><td>–</td></tr><tr><td>Thu 09.07. 14:30</td>
+        <td>USD</td><td><span class="imp-m">MED</span></td><td>Unemployment Claims</td>
+        <td>218K</td><td>215K</td></tr></table>
+<div class="disclaimer">⚠️ Kalenderdaten: ForexFactory · Fear&Greed: alternative.me · Kurse: Yahoo Finance. Keine Anlageberatung.</div>
+</body></html>
