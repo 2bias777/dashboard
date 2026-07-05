@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Depot-Tracker</title>
+<style>
+ body{font-family:Segoe UI,Arial,sans-serif;background:#0f1420;color:#e8ecf4;margin:0;padding:20px;max-width:900px;margin:auto}
+ h1{font-size:22px} h2{font-size:15px;color:#8b95a8;margin:18px 0 8px}
+ .sub{color:#8b95a8;font-size:12px;margin-bottom:14px}
+ select,input,button{background:#1c2536;color:#e8ecf4;border:1px solid #33405a;border-radius:8px;padding:8px 10px;font-size:13px}
+ button{cursor:pointer} button.primary{background:#2e6bff;border-color:#2e6bff}
+ button.danger{background:#3a1420;border-color:#5a2030;color:#ff5d5d}
+ .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+ .card{background:#161d2e;border:1px solid #26314a;border-radius:12px;padding:14px;margin-bottom:12px}
+ table{width:100%;border-collapse:collapse;font-size:13px}
+ th,td{padding:7px 8px;text-align:right;border-bottom:1px solid #26314a}
+ th:first-child,td:first-child{text-align:left}
+ th{color:#8b95a8;font-size:11px}
+ .up{color:#3ddc84}.down{color:#ff5d5d}
+ .big{font-size:24px;font-weight:700}
+ .bar-bg{background:#0f1420;border-radius:6px;height:18px;position:relative;margin:4px 0}
+ .bar{height:100%;border-radius:6px;background:#2e6bff}
+ .bar-label{position:absolute;left:8px;top:1px;font-size:11px}
+ .warn-box{background:#33290f;border:1px solid #6a5416;color:#f4c542;border-radius:8px;padding:10px;font-size:13px;margin-bottom:10px}
+ textarea{width:100%;background:#0f1420;color:#e8ecf4;border:1px solid #33405a;border-radius:8px;padding:8px;font-size:11px;min-height:60px}
+ .del{color:#ff5d5d;cursor:pointer;font-weight:700}
+ .muted{color:#657089;font-size:12px}
+</style></head><body>
+<h1>💼 Depot-Tracker</h1>
+<div class="sub">Preise: <span id="updated">…</span> · Dein Depot wird <b>nur in diesem Browser</b> gespeichert – niemand sonst kann es sehen. Backup über Export/Import unten.</div>
+
+<div class="card">
+ <div class="row">
+  <b>Profil:</b>
+  <select id="profileSel"></select>
+  <input id="newProfile" placeholder="Neues Profil (Name)" style="width:150px">
+  <button onclick="addProfile()">+ Anlegen</button>
+  <button class="danger" onclick="delProfile()">Profil löschen</button>
+ </div>
+</div>
+
+<div class="card">
+ <h2>Position hinzufügen</h2>
+ <div class="row">
+  <input list="assetList" id="assetIn" placeholder="Titel suchen…" style="flex:1;min-width:180px">
+  <datalist id="assetList"></datalist>
+  <input id="qtyIn" type="number" step="any" placeholder="Stück" style="width:90px">
+  <input id="buyIn" type="number" step="any" placeholder="Kaufkurs €" style="width:110px">
+  <button class="primary" onclick="addPos()">Hinzufügen</button>
+ </div>
+ <div class="muted">Kaufkurs in EUR pro Stück (bei Krypto pro Coin, Bruchteile erlaubt: z.B. 0.05 BTC)</div>
+</div>
+
+<div class="card">
+ <div class="row" style="justify-content:space-between">
+  <div>Depotwert<br><span class="big" id="totalVal">–</span></div>
+  <div>Investiert<br><span class="big" id="totalInv">–</span></div>
+  <div>Gewinn/Verlust<br><span class="big" id="totalPL">–</span></div>
+ </div>
+</div>
+
+<div id="warnings"></div>
+
+<div class="card">
+ <h2>Positionen</h2>
+ <table id="posTable"></table>
+</div>
+
+<div class="card">
+ <h2>Aufteilung nach Gruppe (Klumpenrisiko)</h2>
+ <div id="alloc"></div>
+</div>
+
+<div class="card">
+ <h2>Backup: Export / Import</h2>
+ <textarea id="io" placeholder="Export erzeugt hier Text zum Kopieren. Zum Importieren: Text einfügen und Import klicken."></textarea>
+ <div class="row" style="margin-top:8px">
+  <button onclick="exportData()">Export (alle Profile)</button>
+  <button onclick="importData()">Import</button>
+ </div>
+</div>
+
+<script>
+let PRICES={}, UPDATED="";
+const LS_KEY="depot_profiles_v1";
+function loadStore(){try{return JSON.parse(localStorage.getItem(LS_KEY))||{}}catch(e){return{}}}
+function saveStore(s){localStorage.setItem(LS_KEY,JSON.stringify(s))}
+let store=loadStore();
+if(Object.keys(store).length===0){store={"Mein Depot":[]};saveStore(store);}
+let current=Object.keys(store)[0];
+
+function fmt(v){return v.toLocaleString('de-DE',{maximumFractionDigits:2})+' €';}
+function pctf(v){return (v>=0?'+':'')+v.toFixed(1)+'%';}
+
+fetch('prices.json?t='+Date.now()).then(r=>r.json()).then(d=>{
+ PRICES=d.assets; UPDATED=d.updated;
+ document.getElementById('updated').textContent=UPDATED;
+ const dl=document.getElementById('assetList');
+ dl.innerHTML=Object.entries(PRICES).map(([k,a])=>`<option value="${k}">${a.name} (${a.group})</option>`).join('');
+ renderProfiles(); render();
+}).catch(()=>{document.getElementById('updated').textContent='Preisliste nicht ladbar – läuft der Updater?';});
+
+function renderProfiles(){
+ const sel=document.getElementById('profileSel');
+ sel.innerHTML=Object.keys(store).map(p=>`<option ${p===current?'selected':''}>${p}</option>`).join('');
+ sel.onchange=()=>{current=sel.value;render();};
+}
+function addProfile(){
+ const n=document.getElementById('newProfile').value.trim();
+ if(!n||store[n])return;
+ store[n]=[];saveStore(store);current=n;renderProfiles();render();
+ document.getElementById('newProfile').value='';
+}
+function delProfile(){
+ if(Object.keys(store).length<=1){alert('Letztes Profil kann nicht gelöscht werden.');return;}
+ if(!confirm(`Profil "${current}" wirklich löschen?`))return;
+ delete store[current];saveStore(store);current=Object.keys(store)[0];renderProfiles();render();
+}
+function addPos(){
+ const t=document.getElementById('assetIn').value.trim();
+ const q=parseFloat(document.getElementById('qtyIn').value);
+ const b=parseFloat(document.getElementById('buyIn').value);
+ if(!PRICES[t]){alert('Titel nicht in der Preisliste. Ticker exakt aus der Vorschlagsliste wählen.');return;}
+ if(!(q>0)||!(b>=0)){alert('Stückzahl und Kaufkurs prüfen.');return;}
+ store[current].push({t,q,b});saveStore(store);render();
+ document.getElementById('assetIn').value='';document.getElementById('qtyIn').value='';document.getElementById('buyIn').value='';
+}
+function delPos(i){store[current].splice(i,1);saveStore(store);render();}
+
+function render(){
+ const pos=store[current]||[];
+ let rows='<tr><th>Titel</th><th>Stück</th><th>Kaufkurs</th><th>Kurs</th><th>Wert</th><th>G/V</th><th>G/V %</th><th>Anteil</th><th></th></tr>';
+ let total=0,inv=0;const groups={};
+ const items=pos.map((p,i)=>{
+  const a=PRICES[p.t]||{name:p.t+' (?)',group:'Unbekannt',price_eur:0};
+  const val=p.q*a.price_eur, cost=p.q*p.b;
+  total+=val;inv+=cost;
+  groups[a.group]=(groups[a.group]||0)+val;
+  return {i,p,a,val,cost};
+ });
+ items.forEach(({i,p,a,val,cost})=>{
+  const pl=val-cost, plp=cost>0?pl/cost*100:0, share=total>0?val/total*100:0;
+  rows+=`<tr><td>${a.name}</td><td>${p.q}</td><td>${fmt(p.b)}</td><td>${fmt(a.price_eur)}</td>
+   <td>${fmt(val)}</td><td class="${pl>=0?'up':'down'}">${fmt(pl)}</td>
+   <td class="${pl>=0?'up':'down'}">${pctf(plp)}</td><td>${share.toFixed(1)}%</td>
+   <td><span class="del" onclick="delPos(${i})">✕</span></td></tr>`;
+ });
+ document.getElementById('posTable').innerHTML=pos.length?rows:'<tr><td class="muted">Noch keine Positionen – oben hinzufügen.</td></tr>';
+ const pl=total-inv;
+ document.getElementById('totalVal').textContent=fmt(total);
+ document.getElementById('totalInv').textContent=fmt(inv);
+ const plEl=document.getElementById('totalPL');
+ plEl.textContent=fmt(pl)+(inv>0?` (${pctf(pl/inv*100)})`:'');
+ plEl.className='big '+(pl>=0?'up':'down');
+
+ // Aufteilung + Warnungen
+ let alloc='';const warns=[];
+ Object.entries(groups).sort((a,b)=>b[1]-a[1]).forEach(([g,v])=>{
+  const s=total>0?v/total*100:0;
+  alloc+=`<div class="bar-bg"><div class="bar" style="width:${s}%;background:${s>40?'#ff5d5d':s>25?'#f4c542':'#2e6bff'}"></div>
+   <span class="bar-label">${g}: ${s.toFixed(1)}% (${fmt(v)})</span></div>`;
+  if(s>40)warns.push(`⚠️ <b>${g}</b> macht ${s.toFixed(0)}% deines Depots aus – hohes Klumpenrisiko.`);
+ });
+ items.forEach(({a,val})=>{
+  const s=total>0?val/total*100:0;
+  if(s>25)warns.push(`⚠️ Einzelposition <b>${a.name}</b> = ${s.toFixed(0)}% des Depots.`);
+ });
+ document.getElementById('alloc').innerHTML=alloc||'<span class="muted">–</span>';
+ document.getElementById('warnings').innerHTML=warns.length?`<div class="warn-box">${warns.join('<br>')}</div>`:'';
+}
+function exportData(){document.getElementById('io').value=JSON.stringify(store);}
+function importData(){
+ try{
+  const d=JSON.parse(document.getElementById('io').value);
+  if(typeof d!=='object')throw 0;
+  store=d;saveStore(store);current=Object.keys(store)[0];renderProfiles();render();
+  alert('Import erfolgreich!');
+ }catch(e){alert('Import fehlgeschlagen – Text prüfen.');}
+}
+</script></body></html>
